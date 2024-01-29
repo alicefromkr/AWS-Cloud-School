@@ -1,31 +1,44 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 export default function Home() {
   const [name, setName] = useState("");
   const [apiCheck, setApiCheck] = useState(false);
   const [currentIP, setCurrentIP] = useState("");
   const [logData, setLogData] = useState([]);
+  const [showError, setShowError] = useState(false);
 
   async function getData() {
-    const response = await fetch("http://192.168.0.129/api/hello");
-    const ip_text = await response.text();
-    const myIP = ip_text === "" ? {} : JSON.parse(ip_text);
-    setCurrentIP(myIP.ip);
-    setApiCheck(true);
+    try {
+      const response = await fetch("http://192.168.0.129/api/hello");
+      const ip_text = await response.text();
+      const myIP = ip_text === "" ? {} : JSON.parse(ip_text);
+      setCurrentIP(myIP.ip);
+      setApiCheck(true);
+    } catch (error) {
+      setShowError(true);
+    }
   }
 
-  useEffect(() => {
-    console.log(logData);
-  }, [logData]);
+  // useEffect(() => {
+  //   console.log(logData);
+  // }, [logData]);
 
   async function getLog() {
-    const response = await fetch(`http://192.168.0.129/log/?addr=${currentIP}`);
-    const log_text = await response.text();
-    const myLog = log_text === "" ? {} : JSON.parse(log_text);
-    setLogData((prevLogData) => myLog.data);
+    try {
+      const response = await fetch(
+        `http://192.168.0.129/log/?addr=${currentIP}`
+      );
+      const log_text = await response.text();
+      const myLog = log_text === "" ? {} : JSON.parse(log_text);
+      const myData = myLog.data.reverse();
+      setLogData((prevLogData) => myData);
+    } catch (error) {
+      setShowError(true);
+    }
     //console.log(logData);
   }
+
   const handleClick = (e) => {
     getData();
   };
@@ -34,29 +47,29 @@ export default function Home() {
     getLog();
   };
 
-  const renderRow = () => {
-    {
-      logData.map((d, i) => {
-        d.split().map((t) => {
-          var temp = t.split(" ");
-          return (
-            <>
-              <tr>
-                <td>{temp[0]}</td>
-                <td>{temp[0]}</td>
-                <td>{temp[0]}</td>
-                <td>{temp[0]}</td>
-                <td>{temp[0]}</td>
-              </tr>
-            </>
-          );
-        });
-      });
-    }
-  };
-
   return (
-    <main className="flex min-h-screen flex-col gap-4 items-center p-24">
+    <main className="flex flex-col gap-4 items-center px-24">
+      <div
+        className={`card w-96 bg-red-100 shadow-xl ${
+          showError ? "visible" : "invisible"
+        }`}
+      >
+        <div className="card-body">
+          <h2 className="card-title">앗!</h2>
+          <p>
+            서버에 오류가 있습니다. 2조에게 연락을 하셔서 서버 확인을
+            요청하세요!
+          </p>
+          <div className="card-actions justify-end">
+            <button
+              className="btn btn-error"
+              onClick={() => setShowError(false)}
+            >
+              확인
+            </button>
+          </div>
+        </div>
+      </div>
       {apiCheck ? (
         <>
           <div>
@@ -83,11 +96,11 @@ export default function Home() {
                 </tr>
               </thead>
               <tbody>
-                {logData.reverse().length != 0 ? (
+                {logData.length != 0 ? (
                   logData.map((t, i) => {
                     var temp = t.split(" ");
                     return (
-                      <tr>
+                      <tr key={i}>
                         <td>{i + 1}</td>
                         <td>{temp[2]}</td>
                         <td>{temp[4].substring(1)}</td>
@@ -126,12 +139,6 @@ export default function Home() {
             >
               확인
             </button>
-            {/* <button
-              className="btn btn-outline btn-accent"
-              onClick={handleClickT}
-            >
-              test2
-            </button> */}
           </div>
         </>
       )}
